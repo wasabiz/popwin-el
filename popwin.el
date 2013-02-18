@@ -293,6 +293,11 @@ window-configuration."
      (delete-other-windows root-win))
     (let ((root-width (window-width root-win))
           (root-height (window-height root-win)))
+      (when (or (eq position 'auto) (eq position :auto))
+	(setq size 0.5 adjust 5)
+	(if (<= root-width 165)
+	    (setq position :bottom)
+	  (setq position :right)))
       (when adjust
         (if (floatp size)
             (if (popwin:position-horizontal-p position)
