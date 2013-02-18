@@ -289,32 +289,38 @@ window-configuration."
          (root-win (popwin:last-selected-window))
          (hfactor 1)
          (vfactor 1))
-    (popwin:save-selected-window
-     (delete-other-windows root-win))
-    (let ((root-width (window-width root-win))
-          (root-height (window-height root-win)))
-      (when (or (eq position 'auto) (eq position :auto))
-	(setq size 0.5 adjust 5)
-	(if (<= root-width 165)
-	    (setq position :bottom)
-	  (setq position :right)))
-      (when adjust
-        (if (floatp size)
-            (if (popwin:position-horizontal-p position)
-                (setq hfactor (- 1.0 size)
-                      size (round (* root-width size)))
-              (setq vfactor (- 1.0 size)
-                    size (round (* root-height size))))
-          (if (popwin:position-horizontal-p position)
-              (setq hfactor (/ (float (- root-width size)) root-width))
-            (setq vfactor (/ (float (- root-height size)) root-height)))))
-      (destructuring-bind (master-win popup-win)
-          (popwin:create-popup-window-1 root-win size position)
-        ;; Mark popup-win being a popup window.
-        (with-selected-window popup-win
-          (popwin:switch-to-buffer (popwin:dummy-buffer) t))
-        (let ((win-map (popwin:replicate-window-config master-win root hfactor vfactor)))
-          (list master-win popup-win win-map))))))
+    (if (or (eq position 'auto) (eq position :auto))
+	(let* ((root-width (window-width root-win))
+	       (slave-win (if (<= root-width 165)
+			      (split-window-below)
+			    (split-window-right))))
+	    ;; Mark popup-win being a popup window.
+	    (with-selected-window slave-win
+	      (popwin:switch-to-buffer (popwin:dummy-buffer) t))
+	    ;; FIXME calculate the 3rd argument win-map properly
+	    (list root-win slave-win nil))
+      (popwin:save-selected-window
+       (delete-other-windows root-win))
+      (let ((root-width (window-width root-win))
+	    (root-height (window-height root-win)))
+	(message "%s" root-width)
+	(when adjust
+	  (if (floatp size)
+	      (if (popwin:position-horizontal-p position)
+		  (setq hfactor (- 1.0 size)
+			size (round (* root-width size)))
+		(setq vfactor (- 1.0 size)
+		      size (round (* root-height size))))
+	    (if (popwin:position-horizontal-p position)
+		(setq hfactor (/ (float (- root-width size)) root-width))
+	      (setq vfactor (/ (float (- root-height size)) root-height)))))
+	(destructuring-bind (master-win popup-win)
+	    (popwin:create-popup-window-1 root-win size position)
+	  ;; Mark popup-win being a popup window.
+	  (with-selected-window popup-win
+	    (popwin:switch-to-buffer (popwin:dummy-buffer) t))
+	  (let ((win-map (popwin:replicate-window-config master-win root hfactor vfactor)))
+	    (list master-win popup-win win-map)))))))
 
 
 
